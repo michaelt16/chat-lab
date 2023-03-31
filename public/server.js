@@ -9,6 +9,7 @@ const io = socketio(server)
 
 
 let users=[]
+
 const chatBot = "chatBot"
 app.get("/", function (req,res){
     res.sendFile(path.join(__dirname,'frontend','chat-adv-client.html'))
@@ -21,13 +22,16 @@ function addUser(username,image){
     const user = { name: username, id: userId, img: image};
     users.push(user);
     io.emit('userList',users)
-    
+    return userId;
 }
-
-// fetch('https://randomuser.me/api')
-//   .then(response => response.json())
-//   .then(data => image = data.results[0].picture.thumbnail)
-//   .catch(error => console.error(error));
+function optimizeMessage(msg,socket){
+    const user = users.find(u => u.id === socket.userId);
+    return {
+        username: user.name,
+        msg: msg,
+        socketId: socket.userId
+    }
+}
 
 //run when client connects
 io.on('connection', socket=>{
@@ -35,11 +39,16 @@ io.on('connection', socket=>{
     
     //broadcast when a user connect
     socket.on("addUser", username=>{
-        io.emit("userList", users)
-        console.log(username,image)
-        addUser(username,image)
-        socket.emit("message",`Welcome to the chat, ${username}!`)
-        socket.broadcast.emit("message", `${username} has joined the chat`)
+        fetch('https://randomuser.me/api')
+        .then(response => response.json())
+        .then(data => {return data.results[0].picture.thumbnail})
+        .then(img => {
+            const userId = addUser(username, img);
+            socket.emit("message", `Welcome to the chat, ${userId}!`);
+            socket.broadcast.emit("message", `${username} has joined the chat`);
+            io.emit("userList", users);
+            socket.userId = userId;
+            })
     })
     
     //runs when client disconnects
@@ -50,10 +59,11 @@ io.on('connection', socket=>{
     //listen to chatmessage
     socket.on('chatMessage', (msg)=>{
         //send the received message back to the client
-        
-        io.emit("message",msg)
+        io.emit("message",optimizeMessage(msg,socket))
     })
 })
+
+
 
 const PORT = 8080
 
