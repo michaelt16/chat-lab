@@ -33,6 +33,13 @@ function optimizeMessage(msg,socket){
     }
 }
 
+function optimizeWelcome(msg,socket){
+    return {
+        username:chatBot,
+        msg:msg
+    }
+}
+
 //run when client connects
 io.on('connection', socket=>{
     console.log("connected to socket")
@@ -44,7 +51,7 @@ io.on('connection', socket=>{
         .then(data => {return data.results[0].picture.thumbnail})
         .then(img => {
             const userId = addUser(username, img);
-            socket.emit("message", `Welcome to the chat, ${userId}!`);
+            socket.emit("message", `Welcome to the chat, ${username}!`);
             socket.broadcast.emit("message", `${username} has joined the chat`);
             io.emit("userList", users);
             socket.userId = userId;
@@ -53,7 +60,13 @@ io.on('connection', socket=>{
     
     //runs when client disconnects
     socket.on('disconnect',()=>{
-        io.emit('message','a user left')
+        const userIndex = users.findIndex(u => u.id === socket.userId);
+        if (userIndex !== -1) {
+            users.splice(userIndex, 1);
+            io.emit('userList', users);
+            io.emit('message', `user has left the chat`);
+        }
+       // io.emit('message','a user left')
     })
     
     //listen to chatmessage

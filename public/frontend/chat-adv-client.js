@@ -2,9 +2,20 @@ document.addEventListener("DOMContentLoaded", function () {
  
 
   const socket = io()
+  let userlist
+  let currUser
   socket.on("message",message=>{
-    outputMesage(message)
-   
+    if(typeof message !== "object"){
+      outputChatBot(message)
+    } else{
+      let currUser = userlist.find(u=>u.id === message.socketId)
+      console.log(currUser.name,message.username)
+      if (username === message.username){
+        outputMesage(message)
+      }else{
+        outputReceive(message)
+      }
+    }
   })
 
   
@@ -16,6 +27,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log(data)
         console.log("printing")
         printData(data)
+        userlist = userList
       })
     }
   })
@@ -23,6 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // get user name and then tell the server
   let username = prompt('What\'s your username?'); 
   socket.emit("username", username) 
+
   let text = document.createTextNode(" [ "+username+" ] ")
   document.querySelector(".messages-header > h3").appendChild(text)
   if(username!=null){
@@ -45,8 +58,8 @@ document.addEventListener("DOMContentLoaded", function () {
   /* User has clicked the leave button */
   document.querySelector("#leave").addEventListener('click', e => {
     e.preventDefault();
-    
-	
+    socket.disconnect()
+    location.reload()
   });  
   function printData(data){
     const partyList = document.querySelector('#users ul');
@@ -73,19 +86,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
     partyList.appendChild(listItem);
   }
-
-  function outputMesage(msg){
+  function outputChatBot (msg){
+    
     console.log(msg)
     const messagesBody = document.querySelector('.messages-body ul');
 
     // create a new list item
     const newMessage = document.createElement('li');
-    newMessage.classList.add('message-sent');
+    newMessage.classList.add('message-user');
 
     // create the message data element
     const messageData = document.createElement('p');
     messageData.classList.add('message-data');
-    messageData.innerHTML = `${username} <span>Today</span>`;
+    messageData.innerHTML = `ChatBot <span>Today</span>`;
 
     // create the message text element
     const messageText = document.createElement('p');
@@ -98,8 +111,61 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // append the new list item to the messages body
     messagesBody.appendChild(newMessage);
+  
+
   }
 
+  function outputMesage(msg){
+    console.log(msg)
+    const messagesBody = document.querySelector('.messages-body ul');
+
+    // create a new list item
+    const newMessage = document.createElement('li');
+    newMessage.classList.add('message-sent');
+
+    // create the message data element
+    const messageData = document.createElement('p');
+    messageData.classList.add('message-data');
+    messageData.innerHTML = `${msg.username} <span>Today</span>`;
+
+    // create the message text element
+    const messageText = document.createElement('p');
+    messageText.classList.add('message-text');
+    messageText.textContent = msg.msg;
+
+    // append the message data and text elements to the new list item
+    newMessage.appendChild(messageData);
+    newMessage.appendChild(messageText);
+
+    // append the new list item to the messages body
+    messagesBody.appendChild(newMessage);
+  }
+  function outputReceive (msg){
+    console.log(msg)
+    const messagesBody = document.querySelector('.messages-body ul');
+
+    // create a new list item
+    const newMessage = document.createElement('li');
+    newMessage.classList.add('message-received');
+
+    // create the message data element
+    const messageData = document.createElement('p');
+    messageData.classList.add('message-data');
+    messageData.innerHTML = `${msg.username} <span>Today</span>`;
+
+    // create the message text element
+    const messageText = document.createElement('p');
+    messageText.classList.add('message-text');
+    messageText.textContent = msg.msg;
+
+    // append the message data and text elements to the new list item
+    newMessage.appendChild(messageData);
+    newMessage.appendChild(messageText);
+
+    // append the new list item to the messages body
+    messagesBody.appendChild(newMessage);
+
+  }
 
   
 
